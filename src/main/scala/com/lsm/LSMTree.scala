@@ -24,7 +24,7 @@ class MemTable {
     this
   }
 
-  def toList() = {
+  def toList: List[MemNode] = {
     memTable.toList
   }
 
