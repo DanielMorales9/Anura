@@ -25,17 +25,17 @@ object RandomString {
 
 object Main {
 
-  def generateCommand(random: scala.util.Random, lsm: CommandInterface): Any = {
+  def generateCommand(i: Int, random: scala.util.Random, lsm: CommandInterface): Any = {
     val key = getNextKey(random)
 
     random.nextInt(3) match {
       case 0 =>
         val opt = lsm.get(key)
         if (opt.isDefined) {
-          println(String.format("GET: %s", opt.get.toString))
+          println(String.format("%s GET: %s", i, opt.get.toString))
         }
         else {
-          println("GET: No Such Element")
+          println(String.format("%d GET: No Such Element", i))
         }
 
       case 1 =>
@@ -45,9 +45,9 @@ object Main {
 
       case 2 =>
         if (lsm.delete(key)== 0) {
-          println(String.format("DELETE: %s", key))
+          println(String.format("%s DELETE: %s", i, key))
         } else {
-          println("DELETE: No Such Element")
+          println(String.format("%d DELETE: No Such Element", i))
         }
 
     }
@@ -59,11 +59,11 @@ object Main {
 
   def initDB(random: scala.util.Random, lsm: CommandInterface, range: Range): Unit = {
     range.foreach(f => {
-      println(String.format("%s: INIT", f))
       var key = getNextKey(random)
       while (key contains ",") key = getNextKey(random)
       val value = random.nextInt(10e6.toInt)
       lsm.put(key, value)
+      println(String.format("%s: PUT %s,%d", f, key, value))
     })
   }
 
@@ -74,8 +74,7 @@ object Main {
     val r = new scala.util.Random
 
     (0 until 100000).foreach(f => {
-      println(String.format("%s: INSTRUCTION", f))
-      generateCommand(r, db)
+      generateCommand(f, r, db)
     })
 
   }
