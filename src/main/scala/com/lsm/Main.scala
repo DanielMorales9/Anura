@@ -25,12 +25,12 @@ object RandomString {
 
 object Main {
 
-  def generateCommand(i: Int, random: scala.util.Random, lsm: CommandInterface): Any = {
+  def generateCommand(i: Int, random: scala.util.Random, cli: CommandInterface): Any = {
     val key = getNextKey(random)
 
     random.nextInt(3) match {
       case 0 =>
-        val opt = lsm.get(key)
+        val opt = cli.get(key)
         if (opt.isDefined) {
           println(String.format("%s GET: %s", i, opt.get.toString))
         }
@@ -40,11 +40,11 @@ object Main {
 
       case 1 =>
         val value = random.nextInt(10e6.toInt)
-        lsm.put(key, value)
+        cli.put(key, value)
         println(String.format("PUT: %s,%d", key, value))
 
       case 2 =>
-        if (lsm.delete(key)== 0) {
+        if (cli.delete(key)== 0) {
           println(String.format("%s DELETE: %s", i, key))
         } else {
           println(String.format("%d DELETE: No Such Element", i))
@@ -57,12 +57,12 @@ object Main {
     RandomString.nextString(random, 10)
   }
 
-  def initDB(random: scala.util.Random, lsm: CommandInterface, range: Range): Unit = {
+  def initDB(random: scala.util.Random, cli: CommandInterface, range: Range): Unit = {
     range.foreach(f => {
       var key = getNextKey(random)
       while (key contains ",") key = getNextKey(random)
       val value = random.nextInt(10e6.toInt)
-      lsm.put(key, value)
+      cli.put(key, value)
       println(String.format("%s: PUT %s,%d", f, key, value))
     })
   }
