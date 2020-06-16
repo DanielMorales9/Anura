@@ -77,5 +77,10 @@ object Main {
       generateCommand(f, r, db)
     })
 
+    println(String.format("FALSE POSITIVE: %f", db.false_positive))
+    println(String.format("EXPECTED TRUE: %d", db.expected_true))
+    println(String.format("ACTUAL TRUE: %d", db.actual_true))
+    println(String.format("ACTUAL FALSE: %d", db.actual_false))
+
   }
 }

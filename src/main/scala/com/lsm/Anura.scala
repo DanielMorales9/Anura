@@ -19,6 +19,12 @@ class Anura(memTableSize: Int = 100,
   val compactor: Compaction = initCompaction()
   val bloomFilter: BloomFilter[String] = initBloomFilter()
 
+  // Bloom Filter Stats
+  var expected_true: Int = 0
+  var actual_true: Int = 0
+  var actual_false: Int = 0
+
+
   def initCompaction(): Compaction = {
     new NaiveCompaction(db_path, numSSTables)
   }
@@ -64,12 +70,16 @@ class Anura(memTableSize: Int = 100,
   }
 
   override def get(key: String): Option[MemNode] = {
-    if (bloomFilter.mightContain(key)) {
-      lsm.get(key)
-    }
-    else {
-      Option.empty[MemNode]
-    }
+    val containsKey = bloomFilter.mightContain(key)
+
+    expected_true += (if (containsKey) 1 else 0)
+
+    val opt = if (containsKey) { lsm.get(key) } else { Option.empty[MemNode] }
+
+    actual_true += (if (opt.isDefined) 1 else 0)
+    actual_false += (if (opt.isEmpty) 1 else 0)
+
+    opt
   }
 
   override def put(key: String, value: Int): Unit = {
@@ -92,11 +102,19 @@ class Anura(memTableSize: Int = 100,
   }
 
   override def delete(key: String): Int = {
-    if (bloomFilter.mightContain(key)) {
-      lsm.delete(key)
-    }
-    else {
-      1
-    }
+    val containsKey = bloomFilter.mightContain(key)
+
+    expected_true += (if (containsKey) 1 else 0)
+
+    val res = if (containsKey) { lsm.delete(key) } else { 1 }
+
+    actual_true += 1 - res
+    actual_false += res
+
+    res
+  }
+
+  def false_positive: Double = {
+    expected_true / (actual_false + actual_true)
   }
 }
