@@ -1,7 +1,7 @@
 package com.lsm
-import scala.util.Random
-
 import java.util.Locale
+
+import scala.util.Random
 
 object RandomString {
 
@@ -28,26 +28,27 @@ object Main {
   def generateCommand(i: Int, random: scala.util.Random, cli: CommandInterface): Any = {
     val key = getNextKey(random)
 
+    val j = i + 1
     random.nextInt(3) match {
       case 0 =>
         val opt = cli.get(key)
         if (opt.isDefined) {
-          println(String.format("%s GET: %s", i, opt.get.toString))
+          println(String.format("%s GET: %s", j, opt.get.toString))
         }
         else {
-          println(String.format("%d GET: No Such Element", i))
+          println(String.format("%d GET: No Such Element", j))
         }
 
       case 1 =>
         val value = random.nextInt(10e6.toInt)
         cli.put(key, value)
-        println(String.format("PUT: %s,%d", key, value))
+        println(String.format("%d PUT: %s,%d", j, key, value))
 
       case 2 =>
         if (cli.delete(key)== 0) {
-          println(String.format("%s DELETE: %s", i, key))
+          println(String.format("%d DELETE: %s", j, key))
         } else {
-          println(String.format("%d DELETE: No Such Element", i))
+          println(String.format("%d DELETE: No Such Element", j))
         }
 
     }
@@ -63,17 +64,24 @@ object Main {
       while (key contains ",") key = getNextKey(random)
       val value = random.nextInt(10e6.toInt)
       cli.put(key, value)
-      println(String.format("%s: PUT %s,%d", f, key, value))
+      println(String.format("%s: PUT %s,%d", f+1, key, value))
     })
   }
 
   def main(args: Array[String]): Unit = {
-    val db = new Anura(memTableSize = 1000, numSSTables = 5, db_path = "db")
-    initDB(new scala.util.Random, db, 0 until 1000)
+    val transactions = 1000000
+    val db = new Anura(
+      memTableSize = 1000,
+      numSSTables = 10,
+      expectedElements = (transactions * 0.70).toInt,
+      falsePositiveRate = 0.001,
+      db_path = "db")
+
+    // initDB(new scala.util.Random, db, 0 until 1000)
 
     val r = new scala.util.Random
 
-    (0 until 100000).foreach(f => {
+    (0 until transactions).foreach(f => {
       generateCommand(f, r, db)
     })
 

@@ -115,6 +115,6 @@ class Anura(memTableSize: Int = 100,
   }
 
   def false_positive: Double = {
-    expected_true / (actual_false + actual_true)
+    (1.0 * expected_true) / (actual_false + actual_true)
   }
 }
