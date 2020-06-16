@@ -1,6 +1,4 @@
-package com.lsm
-
-import java.io._
+package com.lsm.core
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -9,60 +7,22 @@ object MemNodeOrdering extends Ordering[MemNode] {
   def compare(a: MemNode, b: MemNode): Int = a.key.compare(b.key)
 }
 
-class MemTable {
-
-  val memTable = new AVLTree[MemNode]()(MemNodeOrdering)
-
-  def size: Int = memTable.size
-
-  def search(key: String): Option[MemNode] = {
-    memTable.search(new MemNode(key, 0))
-  }
-
-  def += (node: MemNode): MemTable = {
-    memTable += node
-    this
-  }
-
-  def toList: List[MemNode] = {
-    memTable.toList
-  }
-
-}
-
-class LSMTree(bufferSize: Int = 100, numSSTables: Int = 100, db_path: String = ".") {
-
-  val BUFFER_SIZE: Int = bufferSize
-  val NUM_SSTABLES: Int = numSSTables
+class LSMTree(var sstables: List[SSTable], db_path: String = ".") {
 
   var memTable = new MemTable
-  var sstables: List[SSTable] = initSSTables
 
-  private def initSSTables: List[SSTable] = {
-    val files = FileUtils.getListOfFiles(new File(db_path), Constants.SSTABLE_EXT, Constants.SPARSE_IDX_EXT)
+  def numSSTables: Int = sstables.size
+  def memTableSize: Int = memTable.size
 
-    if (files.length == 0) {
-      List.empty[SSTable]
-    } else {
-      files.groupBy(f => {
-        f.getName.split("\\.")(0)
-      })
-        .map(v => new SSTable(v._2)).toList.sortBy(-_.serial)
-    }
+  def compaction(): Unit = {
+    val newMemTable = merge(sstables)
+    val sstable = new SSTable(db_path, newMemTable)
+    deleteSSTables()
+    sstables = sstable :: Nil
   }
 
-  private def deleteOldSSTables(): Unit = {
+  private def deleteSSTables(): Unit = {
     sstables.foreach(f => f.delete())
-  }
-
-  def sstablesCompaction(): Unit = {
-    if (sstables.length > numSSTables) {
-      val newMemTable = merge(sstables)
-      val sstable = new SSTable(db_path, newMemTable)
-      deleteOldSSTables()
-      sstables = sstable::Nil
-    }
-
   }
 
   private def appendToPriorityQueue(iterators: List[Iterator[MemNode]],
@@ -135,13 +95,13 @@ class LSMTree(bufferSize: Int = 100, numSSTables: Int = 100, db_path: String = "
     }
   }
 
-  def spillMemTableToDisk(): Unit = {
+  def flushMemTable(): Unit = {
     /**
      * Write MemTable to Disk.
      */
 
     // Sort the MemTable first
-    val sortedMemTable = memTable.toList()
+    val sortedMemTable = memTable.toList
 
     // create new SSTable from memTable
     val sstable = new SSTable(db_path, sortedMemTable)
@@ -172,13 +132,6 @@ class LSMTree(bufferSize: Int = 100, numSSTables: Int = 100, db_path: String = "
      *  key (String): key to place in node.
      *  val (Int): value to place in node.
      */
-
-    if(memTable.size == BUFFER_SIZE){
-      // buffer is full and must be written to disk
-      spillMemTableToDisk()
-      // run compaction algorithm
-      sstablesCompaction()
-    }
 
     // put or update
     val optMemNode = searchMemory(key)

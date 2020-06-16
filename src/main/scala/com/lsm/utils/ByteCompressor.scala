@@ -1,8 +1,8 @@
-package com.lsm
+package com.lsm.utils
 
 import java.io.{BufferedReader, ByteArrayInputStream, ByteArrayOutputStream, InputStreamReader}
-import java.util.stream
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
+
 import scala.jdk.StreamConverters._
 
 

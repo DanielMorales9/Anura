@@ -25,7 +25,7 @@ object RandomString {
 
 object Main {
 
-  def generateCommand(random: scala.util.Random, lsm: LSMTree): Any = {
+  def generateCommand(random: scala.util.Random, lsm: CommandInterface): Any = {
     val key = getNextKey(random)
 
     random.nextInt(3) match {
@@ -57,7 +57,7 @@ object Main {
     RandomString.nextString(random, 10)
   }
 
-  def initDB(random: scala.util.Random, lsm: LSMTree, range: Range): Unit = {
+  def initDB(random: scala.util.Random, lsm: CommandInterface, range: Range): Unit = {
     range.foreach(f => {
       println(String.format("%s: INIT", f))
       var key = getNextKey(random)
@@ -68,14 +68,14 @@ object Main {
   }
 
   def main(args: Array[String]): Unit = {
-    val lsm = new LSMTree(bufferSize = 1000, numSSTables = 5, db_path = "db")
-    initDB(new scala.util.Random, lsm, 0 until 1000)
+    val db = new Anura(memTableSize = 1000, numSSTables = 5, db_path = "db")
+    initDB(new scala.util.Random, db, 0 until 1000)
 
     val r = new scala.util.Random
 
     (0 until 100000).foreach(f => {
       println(String.format("%s: INSTRUCTION", f))
-      generateCommand(r, lsm)
+      generateCommand(r, db)
     })
 
   }
