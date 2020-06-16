@@ -1,69 +1,14 @@
 package com.lsm.core
 
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
-
 object MemNodeOrdering extends Ordering[MemNode] {
   def compare(a: MemNode, b: MemNode): Int = a.key.compare(b.key)
 }
 
-class LSMTree(var sstables: List[SSTable], db_path: String = ".") {
+class LSMTree(var sstables: List[SSTable], db_path: String, val memTableSize: Int) {
 
   var memTable = new MemTable
 
-  def numSSTables: Int = sstables.size
-  def memTableSize: Int = memTable.size
-
-  def compaction(): Unit = {
-    val newMemTable = merge(sstables)
-    val sstable = new SSTable(db_path, newMemTable)
-    deleteSSTables()
-    sstables = sstable :: Nil
-  }
-
-  private def deleteSSTables(): Unit = {
-    sstables.foreach(f => f.delete())
-  }
-
-  private def appendToPriorityQueue(iterators: List[Iterator[MemNode]],
-                                    priorityQueue: mutable.PriorityQueue[MemNode],
-                                    hashSet: mutable.HashSet[String]): Unit = {
-    iterators.foreach(f => {
-      val node = f.next()
-      if (!hashSet.contains(node.key)) {
-        priorityQueue.addOne(node)
-        hashSet.addOne(node.key)
-      }
-    })
-  }
-
-  private def merge(sstables: List[SSTable]): List[MemNode] = {
-    /**
-     * Merge SSTables together on disk
-     */
-
-    val newMemTable = ListBuffer.empty[MemNode]
-
-    var iterators = sstables.map(s => s.iterator).filter(v => v.hasNext)
-
-    val hashSet = new mutable.HashSet[String]()
-    val priorityQueue = new mutable.PriorityQueue[MemNode]()(MemNodeOrdering)
-
-    appendToPriorityQueue(iterators, priorityQueue, hashSet)
-
-    while(priorityQueue.nonEmpty) {
-      val memNode = priorityQueue.dequeue()
-
-      if (!memNode.thumbStone) {
-        newMemTable += memNode
-      }
-
-      iterators = iterators.filter(t => t.hasNext)
-      appendToPriorityQueue(iterators, priorityQueue, hashSet)
-    }
-
-    newMemTable.toList
-  }
+  def isFull: Boolean = memTable.size == memTableSize
 
   def searchMemory(key: String): Option[MemNode] = {
     /**

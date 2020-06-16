@@ -3,18 +3,11 @@ package com.lsm
 import java.io.File
 
 import bloomfilter.mutable.BloomFilter
-import com.lsm.core.{LSMTree, MemNode, SSTable}
+import com.lsm.core.{Compaction, LSMTree, MemNode, NaiveCompaction, SSTable}
 import com.lsm.utils.{Constants, FileUtils}
 
 import scala.collection.mutable
 
-trait CommandInterface {
-
-  def get(key: String): Option[MemNode]
-  def put(key: String, value: Int): Unit
-  def delete(key: String): Int
-
-}
 
 class Anura(memTableSize: Int = 100,
             numSSTables: Int = 100,
@@ -22,21 +15,22 @@ class Anura(memTableSize: Int = 100,
             falsePositiveRate: Double = 0.1,
             db_path: String = ".") extends CommandInterface {
 
-  val MEMTABLE_SIZE: Int = memTableSize
-  val SSTABLES_SIZE: Int = numSSTables
+  val lsm: LSMTree = initLSMTree()
+  val compactor: Compaction = initCompaction()
+  val bloomFilter: BloomFilter[String] = initBloomFilter()
 
-  var lsm: LSMTree = initLSMTree()
-  var bloomFilter: BloomFilter[String] = initBloomFilter()
-
+  def initCompaction(): Compaction = {
+    new NaiveCompaction(db_path, numSSTables)
+  }
 
   def initLSMTree(): LSMTree = {
-    new LSMTree(initSSTables, db_path)
+    new LSMTree(initSSTables, db_path, memTableSize)
   }
 
   def initBloomFilter(): BloomFilter[String] = {
     val bloomFilter = BloomFilter[String](expectedElements, falsePositiveRate)
 
-    lsm.compaction()
+    compactor.compact(lsm)
 
     // recovering Bloom Filter from SSTables
     val queue = mutable.Queue[MemNode]()
@@ -79,14 +73,15 @@ class Anura(memTableSize: Int = 100,
   }
 
   override def put(key: String, value: Int): Unit = {
-    if(lsm.memTable.size == MEMTABLE_SIZE){
+    if(lsm.isFull){
       // buffer is full and must be written to disk
       lsm.flushMemTable()
 
     }
 
-    if (lsm.sstables.size == SSTABLES_SIZE) {
-      lsm.compaction()
+    if (compactor.needsCompaction(lsm)) {
+      // too many sstables
+      compactor.compact(lsm)
     }
 
     // put key-value pair to LSMTree
