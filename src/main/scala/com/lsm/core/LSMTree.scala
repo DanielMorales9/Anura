@@ -8,7 +8,7 @@ class LSMTree(var sstables: List[SSTable], db_path: String, val memTableSize: In
 
   var memTable = new MemTable
 
-  def isFull: Boolean = memTable.size == memTableSize
+  def isFull: Boolean = memTable.size >= memTableSize
 
   def searchMemory(key: String): Option[MemNode] = {
     /**

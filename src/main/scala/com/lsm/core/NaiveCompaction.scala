@@ -5,8 +5,6 @@ import scala.collection.mutable.ListBuffer
 
 class NaiveCompaction(db_path: String, numSSTables: Int) extends Compaction {
 
-  val SSTABLES_SIZE: Int = numSSTables
-
   def compact(lsm: LSMTree): Unit = {
 
     // merge SSTables
@@ -62,5 +60,5 @@ class NaiveCompaction(db_path: String, numSSTables: Int) extends Compaction {
     })
   }
 
-  override def needsCompaction(lsm: LSMTree): Boolean = { lsm.sstables.size == numSSTables }
+  override def needsCompaction(lsm: LSMTree): Boolean = { lsm.sstables.size >= numSSTables }
 }
