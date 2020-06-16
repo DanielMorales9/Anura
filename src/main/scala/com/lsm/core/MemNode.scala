@@ -1,4 +1,4 @@
-package com.lsm
+package com.lsm.core
 
 class MemNode(var key: String, var value: Int, var thumbStone: Boolean = false) {
 

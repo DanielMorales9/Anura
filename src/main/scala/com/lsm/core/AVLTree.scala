@@ -1,4 +1,4 @@
-package com.lsm
+package com.lsm.core
 
 import scala.collection.mutable
 

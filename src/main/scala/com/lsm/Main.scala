@@ -1,7 +1,7 @@
 package com.lsm
-import scala.util.Random
-
 import java.util.Locale
+
+import scala.util.Random
 
 object RandomString {
 
@@ -25,29 +25,30 @@ object RandomString {
 
 object Main {
 
-  def generateCommand(random: scala.util.Random, lsm: LSMTree): Any = {
+  def generateCommand(i: Int, random: scala.util.Random, cli: CommandInterface): Any = {
     val key = getNextKey(random)
 
+    val j = i + 1
     random.nextInt(3) match {
       case 0 =>
-        val opt = lsm.get(key)
+        val opt = cli.get(key)
         if (opt.isDefined) {
-          println(String.format("GET: %s", opt.get.toString))
+          println(String.format("%s GET: %s", j, opt.get.toString))
         }
         else {
-          println("GET: No Such Element")
+          println(String.format("%d GET: No Such Element", j))
         }
 
       case 1 =>
         val value = random.nextInt(10e6.toInt)
-        lsm.put(key, value)
-        println(String.format("PUT: %s,%d", key, value))
+        cli.put(key, value)
+        println(String.format("%d PUT: %s,%d", j, key, value))
 
       case 2 =>
-        if (lsm.delete(key)== 0) {
-          println(String.format("DELETE: %s", key))
+        if (cli.delete(key)== 0) {
+          println(String.format("%d DELETE: %s", j, key))
         } else {
-          println("DELETE: No Such Element")
+          println(String.format("%d DELETE: No Such Element", j))
         }
 
     }
@@ -57,26 +58,37 @@ object Main {
     RandomString.nextString(random, 10)
   }
 
-  def initDB(random: scala.util.Random, lsm: LSMTree, range: Range): Unit = {
+  def initDB(random: scala.util.Random, cli: CommandInterface, range: Range): Unit = {
     range.foreach(f => {
-      println(String.format("%s: INIT", f))
       var key = getNextKey(random)
       while (key contains ",") key = getNextKey(random)
       val value = random.nextInt(10e6.toInt)
-      lsm.put(key, value)
+      cli.put(key, value)
+      println(String.format("%s: PUT %s,%d", f+1, key, value))
     })
   }
 
   def main(args: Array[String]): Unit = {
-    val lsm = new LSMTree(bufferSize = 1000, numSSTables = 5, db_path = "db")
-    initDB(new scala.util.Random, lsm, 0 until 1000)
+    val transactions = 1000000
+    val db = new Anura(
+      memTableSize = 1000,
+      numSSTables = 10,
+      expectedElements = (transactions * 0.70).toInt,
+      falsePositiveRate = 0.001,
+      db_path = "db")
+
+    // initDB(new scala.util.Random, db, 0 until 1000)
 
     val r = new scala.util.Random
 
-    (0 until 100000).foreach(f => {
-      println(String.format("%s: INSTRUCTION", f))
-      generateCommand(r, lsm)
+    (0 until transactions).foreach(f => {
+      generateCommand(f, r, db)
     })
+
+    println(String.format("FALSE POSITIVE: %f", db.false_positive))
+    println(String.format("EXPECTED TRUE: %d", db.expected_true))
+    println(String.format("ACTUAL TRUE: %d", db.actual_true))
+    println(String.format("ACTUAL FALSE: %d", db.actual_false))
 
   }
 }

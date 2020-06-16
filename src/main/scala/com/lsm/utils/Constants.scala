@@ -1,4 +1,4 @@
-package com.lsm
+package com.lsm.utils
 
 object Constants {
   val SSTABLE_EXT: String = "sst"

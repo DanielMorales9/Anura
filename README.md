@@ -12,10 +12,16 @@ and it is meant as a place to improve my knowledge on database design.
 - [x] AVL-Tree implementation of MemTable
 - [ ] Red-Black-Tree implementation of MemTable
 - [x] Gzip Compression of SSTables' blocks
-- [ ] Bloom-Filter for fast Key lookup
+- [x] Bloom-Filter for fast Key lookup
 - [ ] Write-Append-Log for fault-recovery
+- [x] Naive Compaction
 - [ ] Leveled Compaction
 - [ ] Size-tiered Compaction
- 
-The only value that the datastore currently supports is integer.    
-Benchmark test and profiling are still ongoing.     
+- [ ] LRU Cache    
+
+# TODO
+- Support for Generic Byte Array
+- Adding Tests
+- Benchmark test
+- Profiling
+- Research better compression and encoding solutions
