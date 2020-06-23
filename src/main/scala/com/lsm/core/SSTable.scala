@@ -11,20 +11,20 @@ import scala.io.Source
 
 object SparseInMemoryIndexEncoder {
 
-  def loadSparseInMemoryIndex(f: File): List[(String, Int)] = {
+  def loadSparseInMemoryIndex(f: File): Array[(String, Int)] = {
     val source = Source.fromFile(f)
 
     val index = source
       .getLines
       .map(s => s.split(','))
-      .map(s => (s(0), s(1).toInt)).toList
+      .map(s => (s(0), s(1).toInt)).toArray
 
     source.close
 
     index
   }
 
-  def writeSparseInMemoryIndex(sparseIndexPath: String, sparseIndex: List[(String, Int)]): Unit = {
+  def writeSparseInMemoryIndex(sparseIndexPath: String, sparseIndex: Array[(String, Int)]): Unit = {
     val file = new File(sparseIndexPath)
     val bw = new BufferedWriter(new FileWriter(file))
     val content = sparseIndex.map(line => String.format("%s,%d", line._1, line._2)).mkString("\r\n")
@@ -36,7 +36,7 @@ object SparseInMemoryIndexEncoder {
 class SparseInMemoryIndex extends Iterable[(String, Int)] {
 
   var path: String = ""
-  var sparseIndex: List[(String, Int)] = List.empty[(String, Int)]
+  var sparseIndex: Array[(String, Int)] = Array.empty[(String, Int)]
   var length: Int = 0
 
   def delete(): Unit = Files.deleteIfExists(Paths.get(path))
@@ -48,10 +48,10 @@ class SparseInMemoryIndex extends Iterable[(String, Int)] {
     length = sparseIndex.length
   }
 
-  def this(path: String, sparseIndex: List[(String, Int)]) {
+  def this(path: String, sparseIndex: Array[(String, Int)]) {
     this()
     this.path = path
-    this.sparseIndex = sparseIndex
+    this.sparseIndex = sparseIndex.toArray
     this.length = sparseIndex.length
     SparseInMemoryIndexEncoder.writeSparseInMemoryIndex(path, sparseIndex)
   }
@@ -129,7 +129,7 @@ class SSTable extends Iterable[MemNode] {
     Files.deleteIfExists(Paths.get(sstablePath))
   }
 
-  def writeMemTableToDisk(memTable: List[MemNode]): List[(String, Int)] = {
+  def writeMemTableToDisk(memTable: List[MemNode]): Array[(String, Int)] = {
     var offset = 0
     val file = new File(sstablePath)
     val bw = new FileOutputStream(file, false)
@@ -144,7 +144,7 @@ class SSTable extends Iterable[MemNode] {
     })
 
     bw.close()
-    index.toList
+    index.toArray
   }
 
   private def getSerial(file: File): Long = {
