@@ -1,4 +1,4 @@
-package com.lsm.core
+package com.lsm.engine
 
 object MemNodeOrdering extends Ordering[MemNode] {
   def compare(a: MemNode, b: MemNode): Int = a.key.compare(b.key)
@@ -83,7 +83,7 @@ class LSMTree(var sstables: List[SSTable], db_path: String, val memTableSize: In
     if (optMemNode.isDefined) {
       val memNode = optMemNode.get
       memNode.setValue(value)
-      memNode.setThumbStone(false)
+      memNode.setTombStone(false)
     }
     else {
       memTable += new MemNode(key, value)
@@ -101,7 +101,7 @@ class LSMTree(var sstables: List[SSTable], db_path: String, val memTableSize: In
 
     if (optMemNode.isDefined) {
       val memNode = optMemNode.get
-      memNode.setThumbStone(true)
+      memNode.setTombStone(true)
       0
     } else {
       1

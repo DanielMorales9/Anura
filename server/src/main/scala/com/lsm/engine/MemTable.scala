@@ -1,4 +1,4 @@
-package com.lsm.core
+package com.lsm.engine
 
 class MemTable {
 

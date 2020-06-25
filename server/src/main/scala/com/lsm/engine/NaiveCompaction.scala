@@ -1,4 +1,4 @@
-package com.lsm.core
+package com.lsm.engine
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -37,7 +37,7 @@ class NaiveCompaction(db_path: String, numSSTables: Int) extends Compaction {
     while(priorityQueue.nonEmpty) {
       val memNode = priorityQueue.dequeue()
 
-      if (!memNode.thumbStone) {
+      if (!memNode.tombStone) {
         newMemTable += memNode
       }
 

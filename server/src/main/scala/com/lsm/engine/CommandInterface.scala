@@ -1,10 +1,8 @@
-package com.lsm
-
-import com.lsm.core.MemNode
+package com.lsm.engine
 
 trait CommandInterface {
 
-  def get(key: String): Option[MemNode]
+  def get(key: String): Option[Int]
 
   def put(key: String, value: Int): Unit
 

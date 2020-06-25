@@ -1,5 +1,8 @@
 package com.lsm
+
 import java.util.Locale
+
+import com.lsm.engine.{AnuraEngine, CommandInterface}
 
 import scala.util.Random
 
@@ -45,7 +48,7 @@ object Main {
         println(String.format("%d PUT: %s,%d", j, key, value))
 
       case 2 =>
-        if (cli.delete(key)== 0) {
+        if (cli.delete(key) == 0) {
           println(String.format("%d DELETE: %s", j, key))
         } else {
           println(String.format("%d DELETE: No Such Element", j))
@@ -70,7 +73,7 @@ object Main {
 
   def main(args: Array[String]): Unit = {
     val transactions = 1000000
-    val db = new Anura(
+    val db = new AnuraEngine(
       memTableSize = 1000,
       numSSTables = 10,
       expectedElements = (transactions * 0.70).toInt,

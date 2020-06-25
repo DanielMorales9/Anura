@@ -1,19 +1,17 @@
-package com.lsm
+package com.lsm.engine
 
 import java.io.File
 
 import bloomfilter.mutable.BloomFilter
-import com.lsm.core.{Compaction, LSMTree, MemNode, NaiveCompaction, SSTable}
 import com.lsm.utils.{Constants, FileUtils}
 
 import scala.collection.mutable
 
-
-class Anura(memTableSize: Int = 100,
-            numSSTables: Int = 100,
-            expectedElements: Int = 1000,
-            falsePositiveRate: Double = 0.1,
-            db_path: String = ".") extends CommandInterface {
+class AnuraEngine(memTableSize: Int = 100,
+                  numSSTables: Int = 100,
+                  expectedElements: Int = 1000,
+                  falsePositiveRate: Double = 0.1,
+                  db_path: String = ".") extends CommandInterface {
 
   val lsm: LSMTree = initLSMTree()
   val compactor: Compaction = initCompaction()
@@ -69,12 +67,12 @@ class Anura(memTableSize: Int = 100,
     }
   }
 
-  override def get(key: String): Option[MemNode] = {
+  override def get(key: String): Option[Int] = {
     val containsKey = bloomFilter.mightContain(key)
 
     expected_true += (if (containsKey) 1 else 0)
 
-    val opt = if (containsKey) { lsm.get(key) } else { Option.empty[MemNode] }
+    val opt = if (containsKey) { lsm.get(key).map(p => p.value) } else { Option.empty[Int] }
 
     actual_true += (if (opt.isDefined) 1 else 0)
     actual_false += (if (opt.isEmpty) 1 else 0)
@@ -106,7 +104,9 @@ class Anura(memTableSize: Int = 100,
 
     expected_true += (if (containsKey) 1 else 0)
 
-    val res = if (containsKey) { lsm.delete(key) } else { 1 }
+    val res = if (containsKey) {
+      lsm.delete(key)
+    } else { 1 }
 
     actual_true += 1 - res
     actual_false += res
