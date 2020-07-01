@@ -1,5 +1,3 @@
-import sbt.Keys.scalaVersion
-
 lazy val commonDependencies = Seq(
   "com.twitter" 			%% "scrooge-core"    % "latest.release",
   "com.twitter"       %% "finagle-core"  % "latest.release",
@@ -19,10 +17,6 @@ lazy val commonSettings = Seq(
   version := "0.0.1-SNAPSHOT"
 )
 
-//lazy val client = (project in file("client"))
-//  .settings(commonSettings)
-//  .dependsOn(protocol)
-
 lazy val commons = (project in file("commons"))
   .settings(
     commonSettings,
@@ -37,3 +31,9 @@ lazy val server = (project in file("server"))
     libraryDependencies := serverDependencies)
   .dependsOn(commons)
 
+lazy val client = (project in file("client"))
+  .settings(
+    commonSettings,
+    name := "anura-client",
+    libraryDependencies := serverDependencies)
+  .dependsOn(commons)

@@ -3,14 +3,14 @@ package com.lsm.server
 import com.lsm.engine.AnuraEngine
 import com.lsm.thrift.{MyException, Service}
 import com.twitter.finagle.Thrift
+import com.twitter.util.Await
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 
 object AnuraServer extends App {
 
-
-  val engine = new AnuraEngine();
+  val engine = new AnuraEngine(db_path = "db");
 
   val service: Service[Future] = new Service[Future] {
     override def put(key: String, value: Int): Future[Unit] = {
@@ -34,4 +34,5 @@ object AnuraServer extends App {
   }
   val server = Thrift.server.serveIface(":1234", service)
 
+  Await.ready(server)
 }
