@@ -75,12 +75,10 @@ object Main {
         "thrift_client"
       )
 
-    val transactions = 1000000
+    val transactions = 10000
 
     val r = new scala.util.Random
 
-    (0 until transactions).foreach(f => {
-      generateCommand(cli, f, r)
-    })
+    initDB(cli, r, 0 until transactions)
   }
 }
