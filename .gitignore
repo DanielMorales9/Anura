@@ -1,4 +1,4 @@
-../db/
+_db/
 .idea/
 **/target/
 *spx
