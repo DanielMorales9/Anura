@@ -1,9 +1,7 @@
 # Anura: Key-Value Store
 powered by Scala®
 
-A simple key-value store based on the LSM-Tree Algorithm.    
-This repo has an educational purpose, 
-and it is meant as a place to improve my knowledge on database design.  
+A simple key-value store based on the LSM-Tree Algorithm.      
 
 - [x] Single machine
 - [ ] Master-slave replication
