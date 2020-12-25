@@ -19,6 +19,7 @@ class BloomFilterController(
 
   def init(sstables: List[SSTable]): Unit = {
     // recovering Bloom Filter from SSTables
+    // TODO improve readability
     val queue = mutable.Queue[MemNode]()
     var iterators = sstables
       .map(t => t.iterator)

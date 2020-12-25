@@ -14,20 +14,25 @@ object SparseInMemoryIndexEncoder {
   def loadSparseInMemoryIndex(f: File): List[(String, Int)] = {
     val source = Source.fromFile(f)
 
-    val index = source
-      .getLines
+    val index = source.getLines
       .map(s => s.split(','))
-      .map(s => (s(0), s(1).toInt)).toList
+      .map(s => (s(0), s(1).toInt))
+      .toList
 
     source.close
 
     index
   }
 
-  def writeSparseInMemoryIndex(sparseIndexPath: String, sparseIndex: List[(String, Int)]): Unit = {
+  def writeSparseInMemoryIndex(
+      sparseIndexPath: String,
+      sparseIndex: List[(String, Int)]
+  ): Unit = {
     val file = new File(sparseIndexPath)
     val bw = new BufferedWriter(new FileWriter(file))
-    val content = sparseIndex.map(line => String.format("%s,%d", line._1, line._2)).mkString("\r\n")
+    val content = sparseIndex
+      .map(line => String.format("%s,%d", line._1, line._2))
+      .mkString("\r\n")
     bw.write(content)
     bw.close()
   }
@@ -69,8 +74,7 @@ class SparseInMemoryIndex extends Iterable[(String, Int)] {
       if (getKeyByIndex(mid) <= key) {
         ans = mid
         l = mid + 1
-      }
-      else {
+      } else {
         r = mid - 1
       }
     }
@@ -81,16 +85,17 @@ class SparseInMemoryIndex extends Iterable[(String, Int)] {
 }
 
 class SSTable extends Iterable[MemNode] {
+
   /**
-   * An SSTable is a Sorted Single Table that keeps data sorted by key and keys appears only once.
-   *
-   * Its disk and memory representation are different.
-   * On disk it's a sequence of entries sorted by keys and grouped by blocks.
-   * Each block having 1KB of data and compressed on disk.
-   *
-   * In memory, is a sparse HashTable which keeps a byte offset to a compressed file block.
-   * Instead of keeping all keys, byte offset-pairs, we keep only the first key to each block.
-   */
+    * An SSTable is a Sorted Single Table that keeps data sorted by key and keys appears only once.
+    *
+    * Its disk and memory representation are different.
+    * On disk it's a sequence of entries sorted by keys and grouped by blocks.
+    * Each block having 1KB of data and compressed on disk.
+    *
+    * In memory, is a sparse HashTable which keeps a byte offset to a compressed file block.
+    * Instead of keeping all keys, byte offset-pairs, we keep only the first key to each block.
+    */
 
   var serial: Long = 0L
   var sstablePath: String = ""
@@ -100,9 +105,10 @@ class SSTable extends Iterable[MemNode] {
   private val PATH_FORMAT = "%s/%s.%s"
 
   def this(files: Array[File]) {
+
     /**
-     * SSTable constructor to read SSTable from disk
-     */
+      * SSTable constructor to read SSTable from disk
+      */
     this()
     require(files.length == 2)
 
@@ -112,15 +118,18 @@ class SSTable extends Iterable[MemNode] {
   }
 
   def this(db_path: String, memTable: List[MemNode]) {
+
     /**
-     * SSTable constructor to write memTable to disk
-     */
+      * SSTable constructor to write memTable to disk
+      */
     this()
     serial = new Date().getTime
-    sstablePath = String.format(PATH_FORMAT, db_path, serial, Constants.SSTABLE_EXT)
+    sstablePath =
+      String.format(PATH_FORMAT, db_path, serial, Constants.SSTABLE_EXT)
     val index = writeMemTableToDisk(memTable)
 
-    val sparseIndexPath = String.format(PATH_FORMAT, db_path, serial, Constants.SPARSE_IDX_EXT)
+    val sparseIndexPath =
+      String.format(PATH_FORMAT, db_path, serial, Constants.SPARSE_IDX_EXT)
     sparseIndex = new SparseInMemoryIndex(sparseIndexPath, index)
   }
 
@@ -135,13 +144,15 @@ class SSTable extends Iterable[MemNode] {
     val bw = new FileOutputStream(file, false)
     val index = ListBuffer.empty[(String, Int)]
 
-    memTable.grouped(CHUNK_SIZE).foreach(lines => {
-      index.addOne(lines.head.key, offset)
-      val content = lines.map(line => line.toString).mkString("\r\n") + "\r\n"
-      val byteArray = ByteCompressor.compress(content)
-      bw.write(byteArray, 0, byteArray.length)
-      offset = offset + byteArray.length
-    })
+    memTable
+      .grouped(CHUNK_SIZE)
+      .foreach(lines => {
+        index.addOne(lines.head.key, offset)
+        val content = lines.map(line => line.toString).mkString("\r\n") + "\r\n"
+        val byteArray = ByteCompressor.compress(content)
+        bw.write(byteArray, 0, byteArray.length)
+        offset = offset + byteArray.length
+      })
 
     bw.close()
     index.toList
@@ -152,17 +163,18 @@ class SSTable extends Iterable[MemNode] {
   }
 
   private def getSparseIndex(files: Array[File]): SparseInMemoryIndex = {
-    val indexFile  = FileUtils.findFileByExtension(Constants.SPARSE_IDX_EXT, files)
+    val indexFile =
+      FileUtils.findFileByExtension(Constants.SPARSE_IDX_EXT, files)
     new SparseInMemoryIndex(indexFile)
   }
 
-  private def getSSTablePath(files: Array[File]): String = FileUtils.getPath(Constants.SSTABLE_EXT)(files)
+  private def getSSTablePath(files: Array[File]): String =
+    FileUtils.getPath(Constants.SSTABLE_EXT)(files)
 
   private def getEndOffset(idx: Int): Int = {
     if (idx == sparseIndex.length) {
       getSSTableSizeInBytes
-    }
-    else {
+    } else {
       sparseIndex.getOffsetByIndex(idx)
     }
   }
@@ -189,7 +201,7 @@ class SSTable extends Iterable[MemNode] {
 
   def search(key: String): Option[MemNode] = {
     sparseIndex.binSearch(key) match {
-      case -1 => Option.empty
+      case -1         => Option.empty
       case arrayIndex => readAndFormatBlock(arrayIndex).find(n => n.key == key)
     }
   }
@@ -200,11 +212,13 @@ class SSTable extends Iterable[MemNode] {
 
   override def iterator: Iterator[MemNode] = {
     new Iterator[MemNode]() {
-      val sparseIndexIterator: Iterator[Int] = (0 until sparseIndex.length).iterator
+      val sparseIndexIterator: Iterator[Int] =
+        (0 until sparseIndex.length).iterator
       var blockIterator: Iterator[MemNode] = _
 
       def hasNext(): Boolean = {
-        (if (blockIterator != null) blockIterator.hasNext else false) || sparseIndexIterator.hasNext
+        (if (blockIterator != null) blockIterator.hasNext
+         else false) || sparseIndexIterator.hasNext
       }
 
       def next(): MemNode = {
@@ -212,7 +226,7 @@ class SSTable extends Iterable[MemNode] {
           throw new NoSuchElementException
         }
 
-        if(blockIterator == null || !blockIterator.hasNext) {
+        if (blockIterator == null || !blockIterator.hasNext) {
           val i = this.sparseIndexIterator.next()
           blockIterator = readAndFormatBlock(i).iterator
         }
@@ -220,4 +234,5 @@ class SSTable extends Iterable[MemNode] {
       }
     }
   }
+
 }

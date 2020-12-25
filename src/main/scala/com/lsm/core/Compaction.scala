@@ -4,5 +4,5 @@ trait Compaction {
 
   def needsCompaction(lsm: LSMTree): Boolean
 
-  def compact(lsm: LSMTree): Unit
+  def compact(sstables: List[SSTable]): List[SSTable]
 }

@@ -2,6 +2,7 @@ package com.lsm
 
 import com.lsm.controllers.{
   BloomFilterController,
+  CompactionController,
   LSMController,
   StatsController
 }
@@ -18,15 +19,19 @@ class Anura(
 ) extends CommandInterface {
 
   val lsmCtrl: LSMController = new LSMController(db_path, memTableSize)
-  val compactor: Compaction = new NaiveCompaction(db_path, numSSTables)
+  val compactionCtrl: CompactionController = new CompactionController(
+    new NaiveCompaction(db_path, numSSTables),
+    lsmCtrl
+  )
   val bloomFilterCtrl: BloomFilterController =
     new BloomFilterController(expectedElements, falsePositiveRate)
   val stats = new StatsController()
   private val marker = new ReentrantLock
 
   // init
-  compactor.compact(lsmCtrl.lsm)
+  compactionCtrl.compact()
   bloomFilterCtrl.init(lsmCtrl.sstables)
+  compactionCtrl.start()
 
   override def get(key: String): Option[MemNode] = {
     marker.lock()
@@ -54,16 +59,11 @@ class Anura(
     marker.lock()
     try {
 
+      // TODO This might be a condition variable instead
+      //  it could flushMemTable twice if two variable
       if (lsmCtrl.isFull) {
-
         // buffer is full and must be written to disk
         lsmCtrl.flushMemTable()
-      }
-
-      // TODO needs to become a background thread
-      if (compactor.needsCompaction(lsmCtrl.lsm)) {
-        // too many sstables
-        compactor.compact(lsmCtrl.lsm)
       }
 
       // put key-value pair to LSMTree

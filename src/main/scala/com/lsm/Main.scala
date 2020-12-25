@@ -59,7 +59,7 @@ object Main {
 
   val cpuCount = 3
   def main(args: Array[String]): Unit = {
-    val transactions = 100000
+    val transactions = 1000000
 
     val db = new Anura(
       memTableSize = 1000,

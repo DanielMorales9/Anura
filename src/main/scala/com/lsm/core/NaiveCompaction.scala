@@ -5,25 +5,20 @@ import scala.collection.mutable.ListBuffer
 
 class NaiveCompaction(db_path: String, numSSTables: Int) extends Compaction {
 
-  def compact(lsm: LSMTree): Unit = {
+  override def needsCompaction(lsm: LSMTree): Boolean = {
+    lsm.sstables.size >= numSSTables
+  }
 
-    // merge SSTables
-    val newMemTable = merge(lsm.sstables)
-
-    // make New SSTable from merged SSTable
-    val sstable = new SSTable(db_path, newMemTable)
-
-    // delete lsm.sstables
-    lsm.sstables.foreach(f => f.delete())
-
-    // set new sstables
-    lsm.sstables = sstable :: Nil
+  def compact(sstables: List[SSTable]): List[SSTable] = {
+    // make new SSTable from old SSTables
+    new SSTable(db_path, merge(sstables)) :: Nil
   }
 
   private def merge(sstables: List[SSTable]): List[MemNode] = {
+
     /**
-     * Merge SSTables together on disk
-     */
+      * Merge SSTables together on disk
+      */
 
     val newMemTable = ListBuffer.empty[MemNode]
 
@@ -34,7 +29,7 @@ class NaiveCompaction(db_path: String, numSSTables: Int) extends Compaction {
 
     appendToPriorityQueue(iterators, priorityQueue, hashSet)
 
-    while(priorityQueue.nonEmpty) {
+    while (priorityQueue.nonEmpty) {
       val memNode = priorityQueue.dequeue()
 
       if (!memNode.thumbStone) {
@@ -48,9 +43,11 @@ class NaiveCompaction(db_path: String, numSSTables: Int) extends Compaction {
     newMemTable.toList
   }
 
-  private def appendToPriorityQueue(iterators: List[Iterator[MemNode]],
-                                    priorityQueue: mutable.PriorityQueue[MemNode],
-                                    hashSet: mutable.HashSet[String]): Unit = {
+  private def appendToPriorityQueue(
+      iterators: List[Iterator[MemNode]],
+      priorityQueue: mutable.PriorityQueue[MemNode],
+      hashSet: mutable.HashSet[String]
+  ): Unit = {
     iterators.foreach(f => {
       val node = f.next()
       if (!hashSet.contains(node.key)) {
@@ -59,6 +56,4 @@ class NaiveCompaction(db_path: String, numSSTables: Int) extends Compaction {
       }
     })
   }
-
-  override def needsCompaction(lsm: LSMTree): Boolean = { lsm.sstables.size >= numSSTables }
 }
