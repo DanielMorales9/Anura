@@ -1,29 +1,31 @@
 package com.lsm
 
 import java.io.File
-
 import bloomfilter.mutable.BloomFilter
 import com.lsm.core.{Compaction, LSMTree, MemNode, NaiveCompaction, SSTable}
 import com.lsm.utils.{Constants, FileUtils}
 
 import scala.collection.mutable
+import java.util.concurrent.locks.{ReentrantLock, ReentrantReadWriteLock}
 
-
-class Anura(memTableSize: Int = 100,
-            numSSTables: Int = 100,
-            expectedElements: Int = 1000,
-            falsePositiveRate: Double = 0.1,
-            db_path: String = ".") extends CommandInterface {
+class Anura(
+    memTableSize: Int = 100,
+    numSSTables: Int = 100,
+    expectedElements: Int = 1000,
+    falsePositiveRate: Double = 0.1,
+    db_path: String = "."
+) extends CommandInterface {
 
   val lsm: LSMTree = initLSMTree()
   val compactor: Compaction = initCompaction()
   val bloomFilter: BloomFilter[String] = initBloomFilter()
 
+  private val marker = new ReentrantLock
+
   // Bloom Filter Stats
   var expected_true: Int = 0
   var actual_true: Int = 0
   var actual_false: Int = 0
-
 
   def initCompaction(): Compaction = {
     new NaiveCompaction(db_path, numSSTables)
@@ -58,32 +60,46 @@ class Anura(memTableSize: Int = 100,
 
   def initSSTables: List[SSTable] = {
     val file = new File(db_path)
-    val files = FileUtils.getListOfFiles(file, Constants.SSTABLE_EXT, Constants.SPARSE_IDX_EXT)
+    if (!file.exists()) file.mkdir()
+
+    val files = FileUtils.getListOfFiles(
+      file,
+      Constants.SSTABLE_EXT,
+      Constants.SPARSE_IDX_EXT
+    )
 
     if (files.length == 0) {
       List.empty[SSTable]
     } else {
-      files.groupBy(f => {
-        f.getName.split("\\.")(0)
-      }).map(v => new SSTable(v._2)).toList.sortBy(-_.serial)
+      files
+        .groupBy(f => {
+          f.getName.split("\\.")(0)
+        })
+        .map(v => new SSTable(v._2))
+        .toList
+        .sortBy(-_.serial)
     }
   }
 
   override def get(key: String): Option[MemNode] = {
+    marker.lock()
     val containsKey = bloomFilter.mightContain(key)
 
+    val opt = if (containsKey) { lsm.get(key) }
+    else { Option.empty[MemNode] }
+
     expected_true += (if (containsKey) 1 else 0)
-
-    val opt = if (containsKey) { lsm.get(key) } else { Option.empty[MemNode] }
-
     actual_true += (if (opt.isDefined) 1 else 0)
     actual_false += (if (opt.isEmpty) 1 else 0)
 
+    marker.unlock()
     opt
   }
 
   override def put(key: String, value: Int): Unit = {
-    if(lsm.isFull){
+    marker.lock()
+    if (lsm.isFull) {
+
       // buffer is full and must be written to disk
       lsm.flushMemTable()
 
@@ -99,18 +115,21 @@ class Anura(memTableSize: Int = 100,
 
     // adding Key to BloomFilter
     bloomFilter.add(key)
+    marker.unlock();
   }
 
   override def delete(key: String): Int = {
+    marker.lock();
     val containsKey = bloomFilter.mightContain(key)
 
+    val res = if (containsKey) { lsm.delete(key) }
+    else { 1 }
+
     expected_true += (if (containsKey) 1 else 0)
-
-    val res = if (containsKey) { lsm.delete(key) } else { 1 }
-
     actual_true += 1 - res
     actual_false += res
 
+    marker.unlock();
     res
   }
 
