@@ -1,4 +1,4 @@
-package com.lsm
+package com.lsm.controllers
 
 import com.lsm.core.{LSMTree, MemNode, SSTable}
 import com.lsm.utils.{Constants, FileUtils}

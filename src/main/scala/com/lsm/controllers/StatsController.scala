@@ -1,9 +1,9 @@
-package com.lsm;
+package com.lsm.controllers
 
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import scala.collection.mutable;
 
-class StatsCollector() {
+class StatsController() {
 
   private val countMap = new mutable.HashMap[String, Int]().withDefaultValue(0)
 

@@ -1,4 +1,4 @@
-package com.lsm
+package com.lsm.controllers
 
 import bloomfilter.mutable.BloomFilter
 import com.lsm.core.{MemNode, SSTable}

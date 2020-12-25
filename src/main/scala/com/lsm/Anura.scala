@@ -1,5 +1,10 @@
 package com.lsm
 
+import com.lsm.controllers.{
+  BloomFilterController,
+  LSMController,
+  StatsController
+}
 import com.lsm.core._
 
 import java.util.concurrent.locks.ReentrantLock
@@ -16,7 +21,7 @@ class Anura(
   val compactor: Compaction = new NaiveCompaction(db_path, numSSTables)
   val bloomFilterCtrl: BloomFilterController =
     new BloomFilterController(expectedElements, falsePositiveRate)
-  val stats = new StatsCollector()
+  val stats = new StatsController()
   private val marker = new ReentrantLock
 
   // init
