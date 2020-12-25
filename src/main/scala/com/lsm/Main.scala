@@ -57,7 +57,7 @@ object Main {
     })
   }
 
-  val cpuCount = 3;
+  val cpuCount = 3
   def main(args: Array[String]): Unit = {
     val transactions = 100000
 
@@ -85,10 +85,7 @@ object Main {
     val diffInSecs = ChronoUnit.SECONDS.between(start, end)
 
     println(String.format("Benchmark: %s seconds", diffInSecs))
-    println(String.format("FALSE POSITIVE: %f", db.false_positive))
-    println(String.format("EXPECTED TRUE: %d", db.expected_true))
-    println(String.format("ACTUAL TRUE: %d", db.actual_true))
-    println(String.format("ACTUAL FALSE: %d", db.actual_false))
+    db.printStats()
 
   }
 
