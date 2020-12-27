@@ -1,15 +1,19 @@
-package com.lsm.controllers
+package com.lsm.services
 
 import bloomfilter.mutable.BloomFilter
 import com.lsm.core.{MemNode, SSTable}
+import org.slf4j.LoggerFactory
 
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import scala.collection.mutable
 
-class BloomFilterController(
+class BloomFilterService(
     expectedElements: Int,
     falsePositiveRate: Double
 ) {
+
+  private val logger = LoggerFactory.getLogger(getClass.getSimpleName)
+
   private val marker = new ReentrantReadWriteLock()
   private val readMarker = marker.readLock
   private val writeMarker = marker.writeLock
@@ -37,18 +41,22 @@ class BloomFilterController(
 
   def mightContain(key: String): Boolean = {
     readMarker.lock()
+    logger.debug("MightContain START")
     try {
       bloomFilter.mightContain(key);
     } finally {
+      logger.debug("MightContain END")
       readMarker.unlock()
     }
   }
 
   def add(key: String): Unit = {
     writeMarker.lock()
+    logger.debug("add START")
     try {
       bloomFilter.add(key);
     } finally {
+      logger.debug("add END")
       writeMarker.unlock()
     }
   }

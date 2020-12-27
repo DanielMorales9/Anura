@@ -1,16 +1,19 @@
 package com.lsm
 
 import com.lsm.utils.RandomKV
+import org.slf4j.LoggerFactory
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.{Executors, TimeUnit};
 
 class CommandGenerator(
     iteration: Int,
     random: RandomKV,
     cli: CommandInterface
 ) extends Runnable {
+
+  private val logger = LoggerFactory.getLogger(getClass.getSimpleName)
 
   override def run(): Unit = {
     val key = random.nextKey()
@@ -20,21 +23,21 @@ class CommandGenerator(
       case 0 =>
         val opt = cli.get(key)
         if (opt.isDefined) {
-          println(String.format("%s GET: %s", j, opt.get.toString))
+          logger.info(String.format("%s GET: %s", j, opt.get.toString))
         } else {
-          println(String.format("%d GET: No Such Element", j))
+          logger.info(String.format("%d GET: No Such Element", j))
         }
 
       case 1 =>
         val value = random.nextValue(10e6.toInt)
         cli.put(key, value)
-        println(String.format("%d PUT: %s,%d", j, key, value))
+        logger.info(String.format("%d PUT: %s,%d", j, key, value))
 
       case 2 =>
         if (cli.delete(key) == 0) {
-          println(String.format("%d DELETE: %s", j, key))
+          logger.info(String.format("%d DELETE: %s", j, key))
         } else {
-          println(String.format("%d DELETE: No Such Element", j))
+          logger.info(String.format("%d DELETE: No Such Element", j))
         }
 
     }
@@ -42,6 +45,8 @@ class CommandGenerator(
 }
 
 object Main {
+
+  private val logger = LoggerFactory.getLogger(getClass.getSimpleName)
 
   def initDB(
       random: RandomKV,
@@ -53,7 +58,7 @@ object Main {
       while (key contains ",") key = random.nextKey()
       val value = random.nextValue(10e6.toInt)
       cli.put(key, value)
-      println(String.format("%s: PUT %s,%d", f + 1, key, value))
+      logger.info(String.format("%s: PUT %s,%d", f + 1, key, value))
     })
   }
 
@@ -66,14 +71,14 @@ object Main {
       numSSTables = 10,
       expectedElements = (transactions * 0.70).toInt,
       falsePositiveRate = 0.001,
-      db_path = "db"
+      dpPath = "db"
     )
     val random = new RandomKV()
 
     val start = Instant.now()
     // initDB(random, db, 0 until 1000)
 
-    val pool = java.util.concurrent.Executors.newFixedThreadPool(cpuCount)
+    val pool = Executors.newFixedThreadPool(cpuCount)
     (0 until transactions).foreach(it => {
       pool.execute(new CommandGenerator(it, random, db))
     })
@@ -84,7 +89,7 @@ object Main {
 
     val diffInSecs = ChronoUnit.SECONDS.between(start, end)
 
-    println(String.format("Benchmark: %s seconds", diffInSecs))
+    logger.info(String.format("Benchmark: %s seconds", diffInSecs))
     db.printStats()
 
   }

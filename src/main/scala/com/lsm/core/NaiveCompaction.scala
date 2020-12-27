@@ -3,7 +3,7 @@ package com.lsm.core
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class NaiveCompaction(db_path: String, numSSTables: Int) extends Compaction {
+class NaiveCompaction(dbPath: String, numSSTables: Int) extends Compaction {
 
   override def needsCompaction(lsm: LSMTree): Boolean = {
     lsm.sstables.size >= numSSTables
@@ -11,7 +11,7 @@ class NaiveCompaction(db_path: String, numSSTables: Int) extends Compaction {
 
   def compact(sstables: List[SSTable]): List[SSTable] = {
     // make new SSTable from old SSTables
-    new SSTable(db_path, merge(sstables)) :: Nil
+    new SSTable(dbPath, merge(sstables)) :: Nil
   }
 
   private def merge(sstables: List[SSTable]): List[MemNode] = {

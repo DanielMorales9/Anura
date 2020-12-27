@@ -1,9 +1,13 @@
-package com.lsm.controllers
+package com.lsm.services
+
+import org.slf4j.LoggerFactory
 
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import scala.collection.mutable;
 
-class StatsController() {
+class StatsService() {
+
+  private val logger = LoggerFactory.getLogger(getClass.getSimpleName)
 
   private val countMap = new mutable.HashMap[String, Int]().withDefaultValue(0)
 
@@ -13,9 +17,11 @@ class StatsController() {
 
   def upsert(key: String, value: Int): Unit = {
     writeMarker.lock()
+    logger.debug("upsert START")
     try {
       countMap(key) += value
     } finally {
+      logger.debug("upsert VALUE")
       writeMarker.unlock()
     }
   }

@@ -1,14 +1,17 @@
-package com.lsm.controllers
+package com.lsm.services
 
 import com.lsm.core.{Compaction, SSTable}
+import org.slf4j.LoggerFactory
 
-class CompactionController(
+class CompactionService(
     compaction: Compaction,
-    lsmCtrl: LSMController,
+    lsmCtrl: LSMService,
     intervalInMs: Int = 1000
 ) extends Thread {
 
-  // handle gracefull shutdown
+  private val logger = LoggerFactory.getLogger(getClass.getSimpleName)
+
+  // TODO handle graceful shutdown
   this.setDaemon(true)
 
   def needsCompaction(): Boolean =
@@ -25,9 +28,9 @@ class CompactionController(
     while (true) {
       if (needsCompaction()) {
         compact()
-        println("Compacted")
+        logger.debug("Compaction Finished")
       }
-      println("WAIT Compaction")
+      logger.debug("Compaction Check")
       Thread.sleep(intervalInMs)
     }
 

@@ -1,12 +1,16 @@
-package com.lsm.controllers
+package com.lsm.services
 
 import com.lsm.core.{LSMTree, MemNode, SSTable}
 import com.lsm.utils.{Constants, FileUtils}
+import org.slf4j.LoggerFactory
 
 import java.io.File
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
-class LSMController(db_path: String, memTableSize: Int) {
+class LSMService(db_path: String, memTableSize: Int) {
+
+  private val logger = LoggerFactory.getLogger(getClass.getSimpleName)
+
   val lsm: LSMTree = new LSMTree(initSSTables, db_path, memTableSize)
   private val marker = new ReentrantReadWriteLock()
   private val readMarker = marker.readLock
@@ -37,83 +41,99 @@ class LSMController(db_path: String, memTableSize: Int) {
 
   def isFull: Boolean = {
     readMarker.lock()
+    logger.debug("isFull START")
     try {
       lsm.isFull
     } finally {
+      logger.debug("isFull END")
       readMarker.unlock()
     }
   }
 
   def sstables: List[SSTable] = {
     readMarker.lock()
+    logger.debug("sstables START")
     try {
       lsm.sstables
     } finally {
+      logger.debug("sstables END")
       readMarker.unlock()
     }
   }
 
   def duplicateSSTables(): List[SSTable] = {
     writeMarker.lock()
+    logger.debug("duplicateSSTables START")
     try {
       lsm.sstables.map(f => f)
     } finally {
+      logger.debug("replaceSSTables END")
       writeMarker.unlock()
     }
   }
 
   def replaceSSTables(newSSTables: List[SSTable]): Unit = {
     writeMarker.lock()
+    logger.debug("replaceSSTables START")
     try {
       lsm.sstables = newSSTables
     } finally {
+      logger.debug("replaceSSTables END")
       writeMarker.unlock()
     }
   }
 
   def flushMemTable(): Unit = {
-    // TODO multiple threads could run this twice, which it is not necessary
-    //  consider using a condition
     writeMarker.lock()
+    logger.debug("flushMemTable START")
     try {
       lsm.flushMemTable()
     } finally {
+      logger.debug("flushMemTable END")
       writeMarker.unlock()
     }
   }
 
   def getLSMTree: LSMTree = {
     readMarker.lock()
+    logger.debug("getLSMTree START")
     try {
       lsm
     } finally {
+      logger.debug("getLSMTree END")
       readMarker.unlock()
     }
   }
 
   def get(key: String): Option[MemNode] = {
     readMarker.lock()
+    logger.debug("get START")
     try {
       lsm.get(key)
     } finally {
+      logger.debug("get END")
       readMarker.unlock()
     }
   }
 
   def put(key: String, value: Int): Unit = {
     writeMarker.lock()
+    logger.debug("put START")
     try {
       lsm.put(key, value)
     } finally {
+      logger.debug("put END")
       writeMarker.unlock()
     }
   }
 
   def delete(key: String): Int = {
     writeMarker.lock()
+    logger.debug("delete START")
     try {
       lsm.delete(key)
     } finally {
+      logger.debug("delete END")
       writeMarker.unlock()
     }
   }
