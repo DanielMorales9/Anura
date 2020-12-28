@@ -64,15 +64,9 @@ object Main {
 
   val cpuCount = 3
   def main(args: Array[String]): Unit = {
-    val transactions = 1000000
+    val transactions = 100
 
-    val db = new Anura(
-      memTableSize = 1000,
-      numSSTables = 10,
-      expectedElements = (transactions * 0.70).toInt,
-      falsePositiveRate = 0.001,
-      dpPath = "db"
-    )
+    val db = new Anura()
     val random = new RandomKV()
 
     val start = Instant.now()
@@ -90,6 +84,7 @@ object Main {
     val diffInSecs = ChronoUnit.SECONDS.between(start, end)
 
     logger.info(String.format("Benchmark: %s seconds", diffInSecs))
+
     db.printStats()
     db.shutdown()
   }

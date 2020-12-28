@@ -1,33 +1,23 @@
 package com.lsm
 
 import com.lsm.controllers.CommandController
-import com.lsm.core._
 import com.lsm.services.{
   BloomFilterService,
-  CompactionService,
+  CompactionTask,
   LSMService,
   StatsService
 }
 import org.slf4j.LoggerFactory
 
-class Anura(
-    memTableSize: Int = 100,
-    numSSTables: Int = 100,
-    expectedElements: Int = 1000,
-    falsePositiveRate: Double = 0.1,
-    dpPath: String = "."
-) extends CommandController {
+class Anura extends CommandController {
 
   private val logger = LoggerFactory.getLogger(getClass.getSimpleName)
 
-  val lsmService: LSMService = new LSMService(dpPath, memTableSize)
+  val lsmService: LSMService = SimpleFactory.getLSMService
   val bloomFilterService: BloomFilterService =
-    new BloomFilterService(expectedElements, falsePositiveRate)
-  val statsService = new StatsService()
-  val compactionService: CompactionService = new CompactionService(
-    new NaiveCompaction(dpPath, numSSTables),
-    lsmService
-  )
+    SimpleFactory.getBloomFilterService
+  val statsService: StatsService = SimpleFactory.getStatsService
+  val compactionService: CompactionTask = SimpleFactory.getCompactionService
 
   // init
   compactionService.compact()
