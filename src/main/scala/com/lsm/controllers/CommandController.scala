@@ -47,8 +47,6 @@ abstract class CommandController extends CommandInterface {
     putMarker.lock()
     logger.debug("PUT START")
     try {
-      // TODO This might be a condition variable instead
-      //  it could flushMemTable twice if two variable
       if (lsmService.isFull) {
         // buffer is full and must be written to disk
         lsmService.flushMemTable()
