@@ -8,6 +8,7 @@ import com.lsm.services.{
   LSMService,
   StatsService
 }
+import org.slf4j.LoggerFactory
 
 class Anura(
     memTableSize: Int = 100,
@@ -17,14 +18,16 @@ class Anura(
     dpPath: String = "."
 ) extends CommandController {
 
+  private val logger = LoggerFactory.getLogger(getClass.getSimpleName)
+
   val lsmService: LSMService = new LSMService(dpPath, memTableSize)
+  val bloomFilterService: BloomFilterService =
+    new BloomFilterService(expectedElements, falsePositiveRate)
+  val statsService = new StatsService()
   val compactionService: CompactionService = new CompactionService(
     new NaiveCompaction(dpPath, numSSTables),
     lsmService
   )
-  val bloomFilterService: BloomFilterService =
-    new BloomFilterService(expectedElements, falsePositiveRate)
-  val statsService = new StatsService()
 
   // init
   compactionService.compact()
@@ -32,5 +35,12 @@ class Anura(
   compactionService.start()
 
   def printStats(): Unit = statsService.printStats()
+
+  def shutdown(): Unit = {
+    logger.info("Shutting down")
+    compactionService.terminate()
+    compactionService.join()
+    logger.info("Thank you")
+  }
 
 }

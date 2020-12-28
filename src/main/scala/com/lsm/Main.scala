@@ -91,7 +91,7 @@ object Main {
 
     logger.info(String.format("Benchmark: %s seconds", diffInSecs))
     db.printStats()
-
+    db.shutdown()
   }
 
 }

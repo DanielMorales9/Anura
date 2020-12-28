@@ -10,9 +10,11 @@ class CompactionService(
 ) extends Thread {
 
   private val logger = LoggerFactory.getLogger(getClass.getSimpleName)
+  private var finished = false
 
-  // TODO handle graceful shutdown
-  this.setDaemon(true)
+  def terminate(): Unit = {
+    finished = true
+  }
 
   def needsCompaction(): Boolean =
     compaction.needsCompaction(lsmCtrl.getLSMTree)
@@ -25,7 +27,7 @@ class CompactionService(
   }
 
   override def run(): Unit = {
-    while (true) {
+    while (!finished) {
       if (needsCompaction()) {
         compact()
         logger.debug("Compaction Finished")
